@@ -1,0 +1,15 @@
+{
+  "name": "dumbdateparser",
+  "version": "1.0.0",
+  "description": "A stupidly simple date parser - part of the DumbWare suite",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/test.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": ["date", "parser", "dumbware", "simple"],
+  "author": "DumbWare",
+  "license": "MIT"
+}

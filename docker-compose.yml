@@ -1,0 +1,6 @@
+services:
+  app:
+    build: .
+    container_name: dumbdateparser
+    ports:
+      - "3000:3000" 

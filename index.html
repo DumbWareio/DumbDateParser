@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DumbDateParser - Why So DUMB?</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <style>
+        :root {
+            --bg-color: #0D1117;
+            --text-color: #c9d1d9;
+            --border-color: #30363d;
+            --hover-color: #161b22;
+            --accent-color: #58a6ff;
+            --code-bg: #161b22;
+            --code-color: #c9d1d9;
+            --button-bg: #238636;
+            --button-hover: #2ea043;
+            --input-bg: #0d1117;
+            --input-border: #30363d;
+            --input-focus: #58a6ff;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #1a1a1a;
+                --text-color: #ffffff;
+                --border-color: #333333;
+                --hover-color: #2a2a2a;
+                --accent-color: #66b3ff;
+                --code-bg: #000000;
+                --code-color: #cccccc;
+            }
+            .logo svg {
+                filter: invert(1);
+            }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1024px;
+            max-height: 1024px;
+            margin: 0 auto;
+            padding: 16px;
+            background: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background: var(--hover-color);
+            padding: 24px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            max-height: calc(1024px - 32px);
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .logo {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+        }
+
+        .logo svg {
+            width: 100%;
+            height: 100%;
+            fill: var(--text-color);
+        }
+
+        h1 {
+            font-size: 2em;
+            margin: 0;
+            color: var(--text-color);
+            font-weight: 600;
+        }
+
+        .tagline {
+            color: var(--accent-color);
+            font-size: 1.1em;
+            margin: 10px 0;
+            opacity: 0.8;
+        }
+
+        .input-group {
+            margin-bottom: 24px;
+            background: var(--code-bg);
+            padding: 16px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid var(--input-border);
+            border-radius: 6px;
+            background: var(--input-bg);
+            color: var(--text-color);
+            margin-top: 8px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            box-sizing: border-box;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--input-focus);
+            box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.2);
+        }
+
+        .result-section, .code-section {
+            margin: 16px 0;
+            padding: 16px;
+            border-radius: 6px;
+            background: var(--code-bg);
+            border: 1px solid var(--border-color);
+        }
+
+        .code-section {
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            overflow-x: auto;
+        }
+
+        .hint {
+            color: var(--text-color);
+            opacity: 0.7;
+            font-size: 0.9em;
+            margin-top: 8px;
+            padding: 8px;
+            background: var(--bg-color);
+            border-radius: 4px;
+        }
+
+        h3 {
+            margin-top: 0;
+            color: var(--accent-color);
+            font-size: 1.2em;
+            font-weight: 500;
+        }
+
+        .github-link {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .github-link:hover {
+            opacity: 1;
+        }
+
+        .github-link svg {
+            width: 24px;
+            height: 24px;
+            fill: var(--text-color);
+        }
+
+        #parsedResult {
+            padding: 10px;
+            background: var(--bg-color);
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        pre {
+            margin: 0;
+            padding: 10px;
+            background: var(--bg-color);
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        @media (max-width: 1024px) {
+            body {
+                padding: 12px;
+            }
+            
+            .container {
+                padding: 16px;
+            }
+
+            .input-group, .result-section, .code-section {
+                padding: 12px;
+            }
+        }
+
+        @media (max-height: 1024px) {
+            .container {
+                max-height: calc(100vh - 32px);
+            }
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 8px;
+                font-size: 14px;
+            }
+            
+            .container {
+                padding: 12px;
+            }
+
+            .input-group, .result-section, .code-section {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            .tagline {
+                font-size: 1em;
+            }
+
+            input {
+                font-size: 14px;
+                padding: 8px;
+            }
+
+            .hint {
+                font-size: 0.8em;
+                padding: 6px;
+                white-space: normal;
+                word-wrap: break-word;
+            }
+
+            #parsedResult, pre {
+                font-size: 12px;
+            }
+
+            .github-link {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+            }
+        }
+
+        @media (max-height: 600px) {
+            .container {
+                max-height: calc(100vh - 16px);
+                overflow-y: auto;
+            }
+        }
+
+        /* Ensure long words break and don't overflow */
+        .hint, #parsedResult, pre {
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <a href="https://github.com/dumbwareio/DumbDateParser" class="github-link" aria-label="View on GitHub">
+        <svg viewBox="0 0 16 16">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+        </svg>
+    </a>
+
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <svg viewBox="0 0 32 32">
+                    <rect x="4" y="6" width="24" height="22" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
+                    <line x1="4" y1="12" x2="28" y2="12" stroke="currentColor" stroke-width="2"/>
+                    <line x1="10" y1="4" x2="10" y2="8" stroke="currentColor" stroke-width="2"/>
+                    <line x1="22" y1="4" x2="22" y2="8" stroke="currentColor" stroke-width="2"/>
+                </svg>
+            </div>
+            <h1>DumbDateParser</h1>
+            <p class="tagline">Because sometimes the dumbest solution is the best solution!</p>
+        </div>
+        
+        <div class="input-group">
+            <label for="dateInput">Enter a date:</label>
+            <input type="text" id="dateInput" placeholder="Try: tomorrow, next friday, 15th march...">
+            <div class="hint">
+                Try phrases like: "tod", "tom", "thurs", "tues", "next fri", "in 3 days", "15 march", "3rd thurs in november", "mon"
+            </div>
+        </div>
+
+        <div class="result-section">
+            <h3>Parsed Result:</h3>
+            <div id="parsedResult">Enter a date above to see the result</div>
+        </div>
+
+        <div class="code-section">
+            <h3>Code Used:</h3>
+            <pre id="codeUsed">// Enter a date to see the code that parsed it</pre>
+        </div>
+    </div>
+
+    <script type="module">
+        import DumbDateParser from './src/index.js';
+        
+        const parser = new DumbDateParser();
+        const dateInput = document.getElementById('dateInput');
+        const parsedResult = document.getElementById('parsedResult');
+        const codeUsed = document.getElementById('codeUsed');
+
+        function formatDate(date) {
+            if (!date) return 'Could not parse date';
+            return date.toLocaleString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                timeZoneName: 'short'
+            });
+        }
+
+        dateInput.addEventListener('input', () => {
+            const input = dateInput.value.trim();
+            
+            if (!input) {
+                parsedResult.textContent = 'Enter a date above to see the result';
+                codeUsed.textContent = '// Enter a date to see the code that parsed it';
+                return;
+            }
+
+            try {
+                // Parse the date
+                const result = parser.parse(input);
+                
+                // Display the result
+                parsedResult.textContent = result 
+                    ? formatDate(result) 
+                    : 'Could not parse date';
+                
+                // Show the code used to parse
+                codeUsed.textContent = `// Parsing "${input}"
+const parser = new DumbDateParser();
+const result = parser.parse('${input}');
+
+// Result: ${result ? formatDate(result) : 'null'}
+
+// Parsing steps:
+// 1. Normalize input: lowercase and trim
+// 2. Try parsing methods in order:
+//    - Relative dates (today, tomorrow)
+//    - Single day names
+//    - Next day references
+//    - Ordinal day parsing
+//    - Simple date formats`;
+            } catch (error) {
+                parsedResult.textContent = 'Error parsing date';
+                codeUsed.textContent = `// Error: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html> 

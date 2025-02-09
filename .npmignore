@@ -1,0 +1,4 @@
+# Ignore everything except /src/index.js
+*
+!src/
+!src/index.js

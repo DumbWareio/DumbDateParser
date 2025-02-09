@@ -4,6 +4,11 @@
   "description": "A stupidly simple date parser - part of the DumbWare suite",
   "type": "module",
   "main": "src/index.js",
+  "browser": "src/browser.js",
+  "files": [
+    "src/",
+    "README.md"
+  ],
   "scripts": {
     "start": "node server.js",
     "test": "node test/test.js",

@@ -2,15 +2,7 @@
 
 Part of the DumbWare suite - Why So DUMB?
 
-A stupidly simple natural language date parser that somehow gets the job done. Like using a rock as a paperweight: it's not elegant, but hey, the dates aren't going anywhere.
-
-## Why So DUMB?
-
-We believe in the power of stupid simple solutions. This parser is:
-- No dependencies
-- Zero timezone handling (because timezones are hard)
-- Simple pattern matching (who needs fancy algorithms?)
-- Just works™ (most of the time)
+A stupidly simple date parser that just works. No fancy algorithms, no complex rules - just parse dates like a human would.
 
 ## Installation
 
@@ -20,23 +12,27 @@ npm install dumbdateparser
 
 ## Usage
 
+### Node.js
+
 ```javascript
 import DumbDateParser from 'dumbdateparser';
 
-// Create a parser instance
-const parser = new DumbDateParser({
-    pastDatesAllowed: false,  // Don't allow past dates by default
-    defaultYear: 2024         // Optional: specify default year for dates
-});
+// Use the static method
+const date = DumbDateParser.parseDate('tomorrow');
 
-// Parse some dates
-console.log(parser.parse('today'));              // => Date object for today
-console.log(parser.parse('tomorrow'));           // => Date object for tomorrow
-console.log(parser.parse('next tuesday'));       // => Date object for next Tuesday
-console.log(parser.parse('in 5 days'));          // => Date object 5 days from now
-console.log(parser.parse('3rd tuesday in march')); // => Date object for 3rd Tuesday in March
-console.log(parser.parse('15 march'));           // => Date object for March 15th
-console.log(parser.parse('not a date'));         // => null
+// Or create an instance
+const parser = new DumbDateParser();
+const date = parser.parse('next friday');
+```
+
+### Browser
+
+```html
+<script src="node_modules/dumbdateparser/src/browser.js"></script>
+<script>
+    // The parser is available globally as DumbDateParser
+    const date = DumbDateParser.parseDate('tomorrow');
+</script>
 ```
 
 ## Supported Date Formats
@@ -44,22 +40,47 @@ console.log(parser.parse('not a date'));         // => null
 - Relative dates:
   - `today`
   - `tomorrow`
-  - `in X days`
-  - `in X weeks`
-- Next day:
-  - `next monday` (or any day of the week)
-- Ordinal days:
-  - `3rd tuesday in march`
-  - `2nd friday in september`
+  - `yesterday`
+  - `next week`
+  - `next month`
+  - `next year`
+
+- Days of the week:
+  - `monday` (or `mon`)
+  - `tuesday` (or `tue`, `tues`)
+  - `wednesday` (or `wed`, `weds`)
+  - `thursday` (or `thu`, `thur`, `thurs`)
+  - `friday` (or `fri`)
+  - `saturday` (or `sat`)
+  - `sunday` (or `sun`)
+
+- Next specific day:
+  - `next monday`
+  - `next friday`
+  - etc.
+
+- Ordinal dates:
+  - `1st of january`
+  - `15th march`
+  - `23rd of december`
+
 - Simple dates:
-  - `15 march`
-  - `march 15`
-  - Any standard date format that JavaScript's Date.parse() understands
+  - `mm/dd`
+  - `mm-dd`
+  - `mm.dd`
 
-## Options
+- Full dates:
+  - `yyyy/mm/dd`
+  - `yyyy-mm-dd`
+  - `yyyy.mm.dd`
 
-- `pastDatesAllowed` (boolean): Whether to allow dates in the past. If false, past dates will be moved to next year.
-- `defaultYear` (number): The year to use when parsing dates without a year. Defaults to current year.
+## Why So Dumb?
+
+At DumbWare, we believe in the power of stupid simple solutions. This date parser doesn't try to be clever - it just does what you'd expect. No fancy algorithms, no complex rules, just pure, unadulterated simplicity that somehow gets the job done.
+
+## License
+
+MIT
 
 ## Contributing
 

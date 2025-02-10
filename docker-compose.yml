@@ -2,5 +2,7 @@ services:
   app:
     build: .
     container_name: dumbdateparser
+    environment:
+      - TZ=America/Los_Angeles
     ports:
-      - "3000:3000" 
+      - "3001:3000" 

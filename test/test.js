@@ -191,4 +191,30 @@ test('handles partial time default overrides', () => {
 
     result = partialParser.parse('today night');
     assert(result.getHours() === 21, 'Night should be customized to 9 PM');
+});
+
+test('handles timezone conversions correctly', () => {
+    // Mock the timezone to PST for consistent testing
+    const originalGetTimezoneOffset = Date.prototype.getTimezoneOffset;
+    Date.prototype.getTimezoneOffset = function() { return 480; }; // 480 minutes = UTC-8 (PST)
+    
+    try {
+        // Test EST to PST conversion
+        let result = parser.parse('mar 2 at 2pm est');
+        assert(result instanceof Date, 'Should return a Date object');
+        assert(result.getHours() === 11, 'Should convert 2PM EST to 11AM PST');
+        
+        // Test PDT to PST conversion
+        result = parser.parse('mar 2 at 3pm pdt');
+        assert(result instanceof Date, 'Should return a Date object');
+        assert(result.getHours() === 14, 'Should convert 3PM PDT to 2PM PST');
+        
+        // Test UTC to PST conversion
+        result = parser.parse('mar 2 at 12pm utc');
+        assert(result instanceof Date, 'Should return a Date object');
+        assert(result.getHours() === 4, 'Should convert 12PM UTC to 4AM PST');
+    } finally {
+        // Restore original timezone function
+        Date.prototype.getTimezoneOffset = originalGetTimezoneOffset;
+    }
 }); 

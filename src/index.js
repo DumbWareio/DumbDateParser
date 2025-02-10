@@ -131,18 +131,20 @@ class DumbDateParser {
             this._applyTime(date, parts[1]);
         } else if (timeOfDay) {
             // Apply extracted time-of-day
-            date.setHours(TIME_DEFAULTS[timeOfDay], 0, 0, 0);
+            date.setHours(this.timeDefaults[timeOfDay], 0, 0, 0);
         }
 
         // Apply timezone offset if specified
         if (timezone || this.defaultTimezone) {
             const tz = timezone || this.defaultTimezone;
-            const offset = TIMEZONE_OFFSETS[tz];
-            if (offset !== undefined) {
-                // Convert to UTC, then apply the timezone offset
-                const localOffset = date.getTimezoneOffset();
-                date.setMinutes(date.getMinutes() + localOffset); // Convert to UTC
-                date.setMinutes(date.getMinutes() - (offset * 60)); // Apply timezone offset
+            const tzOffset = TIMEZONE_OFFSETS[tz];
+            if (tzOffset !== undefined) {
+                // Get the difference between local timezone and input timezone
+                const localOffset = -date.getTimezoneOffset() / 60; // Convert to hours and invert sign
+                const hoursDiff = localOffset - tzOffset;
+                
+                // Adjust the time by the difference in hours
+                date.setHours(date.getHours() + hoursDiff);
             }
         }
         
@@ -161,6 +163,9 @@ class DumbDateParser {
                 date.setHours(hours, minutes, 0, 0);
                 return true;
             }
+            // Default to midnight for invalid time
+            date.setHours(0, 0, 0, 0);
+            return true;
         }
         
         // Try 12-hour format (3pm, 3:30pm)
@@ -176,6 +181,9 @@ class DumbDateParser {
                 date.setHours(hours, minutes, 0, 0);
                 return true;
             }
+            // Default to midnight for invalid time
+            date.setHours(0, 0, 0, 0);
+            return true;
         }
         
         // Try time-of-day words using instance-specific defaults
@@ -184,6 +192,8 @@ class DumbDateParser {
             return true;
         }
         
+        // Default to midnight for invalid time
+        date.setHours(0, 0, 0, 0);
         return false;
     }
 

@@ -26,6 +26,13 @@ const MONTHS = {
     'dec': 11, 'december': 11
 };
 
+const TIME_DEFAULTS = {
+    'morning': 5,    // 5 AM
+    'afternoon': 12, // 12 PM
+    'evening': 17,   // 5 PM
+    'night': 20     // 8 PM
+};
+
 class DumbDateParser {
     constructor(options = {}) {
         this.defaultYear = options.defaultYear || new Date().getFullYear();
@@ -36,13 +43,72 @@ class DumbDateParser {
         if (!text) return null;
         text = text.toLowerCase().trim();
         
-        // Try all our dumb parsing methods
-        return this._parseRelative(text) ||
-               this._parseSingleDay(text) ||
-               this._parseNextDay(text) ||
-               this._parseOrdinalDay(text) ||
-               this._parseSimpleDate(text) ||
-               this._parseDirectDate(text);
+        // Split into date and time parts if "at" is present
+        const parts = text.split(' at ');
+        let date = null;
+        
+        // Parse the date part
+        if (parts.length > 0) {
+            date = this._parseRelative(parts[0]) ||
+                   this._parseSingleDay(parts[0]) ||
+                   this._parseNextDay(parts[0]) ||
+                   this._parseOrdinalDay(parts[0]) ||
+                   this._parseSimpleDate(parts[0]) ||
+                   this._parseDirectDate(parts[0]);
+        }
+        
+        if (!date) return null;
+        
+        // Parse the time part if it exists
+        if (parts.length > 1) {
+            this._applyTime(date, parts[1]);
+        } else {
+            // Check if the original text contains time-of-day indicators
+            const timeMatch = text.match(/(morning|afternoon|evening|night)/);
+            if (timeMatch) {
+                date.setHours(TIME_DEFAULTS[timeMatch[1]], 0, 0, 0);
+            }
+        }
+        
+        return date;
+    }
+
+    _applyTime(date, timeStr) {
+        timeStr = timeStr.trim();
+        
+        // Try 24-hour format first (15:00)
+        const militaryMatch = timeStr.match(/^(\d{1,2}):?(\d{2})?$/);
+        if (militaryMatch) {
+            const hours = parseInt(militaryMatch[1]);
+            const minutes = militaryMatch[2] ? parseInt(militaryMatch[2]) : 0;
+            if (hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60) {
+                date.setHours(hours, minutes, 0, 0);
+                return true;
+            }
+        }
+        
+        // Try 12-hour format (3pm, 3:30pm)
+        const twelveHourMatch = timeStr.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)$/);
+        if (twelveHourMatch) {
+            let hours = parseInt(twelveHourMatch[1]);
+            const minutes = twelveHourMatch[2] ? parseInt(twelveHourMatch[2]) : 0;
+            const isPM = twelveHourMatch[3].toLowerCase() === 'pm';
+            
+            if (hours >= 1 && hours <= 12 && minutes >= 0 && minutes < 60) {
+                if (isPM && hours !== 12) hours += 12;
+                if (!isPM && hours === 12) hours = 0;
+                date.setHours(hours, minutes, 0, 0);
+                return true;
+            }
+        }
+        
+        // Try time-of-day words
+        if (timeStr in TIME_DEFAULTS) {
+            date.setHours(TIME_DEFAULTS[timeStr], 0, 0, 0);
+            return true;
+        }
+        
+        return false;
     }
 
     _parseRelative(text) {

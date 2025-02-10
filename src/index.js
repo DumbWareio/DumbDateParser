@@ -278,6 +278,18 @@ class DumbDateParser {
     }
 
     _parseSimpleDate(text) {
+        // Check if input is just a month name
+        if (text in MONTHS) {
+            const result = new Date(this.defaultYear, MONTHS[text], 1);
+            
+            // If date is in the past and past dates aren't allowed, move to next year
+            if (!this.pastDatesAllowed && result < new Date()) {
+                result.setFullYear(result.getFullYear() + 1);
+            }
+            
+            return result;
+        }
+
         // Handle day + month (e.g., "15 march" or "march 15")
         const dateMatch = text.match(/(?:(\d{1,2})\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december))|(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)\s*(\d{1,2})/);
         if (!dateMatch) return null;

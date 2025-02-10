@@ -184,8 +184,9 @@
         }
 
         _parseRelative(text) {
-            if (text === 'today') return this._createDate();
-            if (text === 'tomorrow') {
+            // Handle today/tomorrow with shorthand
+            if (text === 'today' || text === 'tod') return this._createDate();
+            if (text === 'tomorrow' || text === 'tom') {
                 const date = this._createDate();
                 date.setDate(date.getDate() + 1);
                 return date;
@@ -193,6 +194,21 @@
             if (text === 'yesterday') {
                 const date = this._createDate();
                 date.setDate(date.getDate() - 1);
+                return date;
+            }
+
+            // Handle "in X days/weeks"
+            const inDaysMatch = text.match(/in (\d+) days?/);
+            if (inDaysMatch) {
+                const date = this._createDate();
+                date.setDate(date.getDate() + parseInt(inDaysMatch[1]));
+                return date;
+            }
+
+            const inWeeksMatch = text.match(/in (\d+) weeks?/);
+            if (inWeeksMatch) {
+                const date = this._createDate();
+                date.setDate(date.getDate() + (parseInt(inWeeksMatch[1]) * 7));
                 return date;
             }
 
@@ -234,28 +250,61 @@
         }
 
         _parseOrdinalDay(text) {
-            const match = text.match(/^(\d+)(st|nd|rd|th) (of )?([a-z]+)$/);
-            if (!match) return null;
+            const ordinalMatch = text.match(/(\d+)(st|nd|rd|th) (sun|mon|tue|tues|wed|weds|thu|thur|thurs|fri|sat|sunday|monday|tuesday|wednesday|thursday|friday|saturday) (?:in |of )?(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)?/);
+            if (!ordinalMatch) {
+                // Try simpler format if complex one fails
+                const simpleMatch = text.match(/^(\d+)(st|nd|rd|th) (of )?([a-z]+)$/);
+                if (!simpleMatch) return null;
 
-            const day = parseInt(match[1]);
-            const monthName = match[4];
-            const monthNum = MONTHS[monthName];
+                const day = parseInt(simpleMatch[1]);
+                const monthName = simpleMatch[4];
+                const monthNum = MONTHS[monthName];
 
-            if (monthNum === undefined || day < 1 || day > 31) return null;
+                if (monthNum === undefined || day < 1 || day > 31) return null;
 
-            const date = this._createDate();
-            date.setMonth(monthNum);
-            date.setDate(day);
+                const date = this._createDate();
+                date.setMonth(monthNum);
+                date.setDate(day);
 
-            // If the date is in the past, move to next year
-            if (date < new Date()) {
-                date.setFullYear(date.getFullYear() + 1);
+                if (!this.pastDatesAllowed && date < new Date()) {
+                    date.setFullYear(date.getFullYear() + 1);
+                }
+
+                return date;
             }
 
-            return date;
+            const ordinal = parseInt(ordinalMatch[1]);
+            const targetDay = DAYS[ordinalMatch[3]];
+            const targetMonth = ordinalMatch[4] ? MONTHS[ordinalMatch[4]] : new Date().getMonth();
+            
+            const result = new Date(this.defaultYear, targetMonth, 1);
+            
+            while (result.getDay() !== targetDay) {
+                result.setDate(result.getDate() + 1);
+            }
+            
+            result.setDate(result.getDate() + (ordinal - 1) * 7);
+            
+            if (!this.pastDatesAllowed && result < new Date()) {
+                result.setFullYear(result.getFullYear() + 1);
+            }
+            
+            return result;
         }
 
         _parseSimpleDate(text) {
+            // Check if input is just a month name
+            if (text in MONTHS) {
+                const result = new Date(this.defaultYear, MONTHS[text], 1);
+                
+                // If date is in the past and past dates aren't allowed, move to next year
+                if (!this.pastDatesAllowed && result < new Date()) {
+                    result.setFullYear(result.getFullYear() + 1);
+                }
+                
+                return result;
+            }
+
             // Match formats like "mm/dd", "mm-dd", "mm.dd"
             const match = text.match(/^(\d{1,2})[\/\-\.](\d{1,2})$/);
             if (!match) return null;

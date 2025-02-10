@@ -100,4 +100,51 @@ test('handles invalid time', () => {
     const result = parser.parse('today at 25:00');
     assert(result instanceof Date, 'Should return a Date object');
     assert(result.getHours() === 0, 'Should default to midnight for invalid time');
+});
+
+// Timezone tests
+test('parses time with timezone', () => {
+    const result = parser.parse('today at 3pm pst');
+    assert(result instanceof Date, 'Should return a Date object');
+    
+    // Convert result to UTC hours for comparison
+    const utcHours = result.getUTCHours();
+    // 3PM PST = 23:00 UTC (PST is UTC-8)
+    assert(utcHours === 23, 'Should convert PST to UTC correctly');
+});
+
+test('handles default timezone', () => {
+    const tzParser = new DumbDateParser({ defaultTimezone: 'est' });
+    const result = tzParser.parse('today at 15:00');
+    assert(result instanceof Date, 'Should return a Date object');
+    
+    // Convert result to UTC hours for comparison
+    const utcHours = result.getUTCHours();
+    // 3PM EST = 20:00 UTC (EST is UTC-5)
+    assert(utcHours === 20, 'Should apply default timezone correctly');
+});
+
+test('handles timezone in complex expressions', () => {
+    const result = parser.parse('next friday at 2pm est');
+    assert(result instanceof Date, 'Should return a Date object');
+    assert(result.getDay() === 5, 'Should be a Friday');
+    
+    // Convert result to UTC hours for comparison
+    const utcHours = result.getUTCHours();
+    // 2PM EST = 19:00 UTC (EST is UTC-5)
+    assert(utcHours === 19, 'Should handle timezone in complex expressions');
+});
+
+test('parses day with time-of-day', () => {
+    const result = parser.parse('thurs afternoon');
+    assert(result instanceof Date, 'Should return a Date object');
+    assert(result.getDay() === 4, 'Should be a Thursday');
+    assert(result.getHours() === 12, 'Should be 12 PM');
+    assert(result > new Date(), 'Should be in the future');
+
+    const result2 = parser.parse('friday morning');
+    assert(result2 instanceof Date, 'Should return a Date object');
+    assert(result2.getDay() === 5, 'Should be a Friday');
+    assert(result2.getHours() === 5, 'Should be 5 AM');
+    assert(result2 > new Date(), 'Should be in the future');
 }); 

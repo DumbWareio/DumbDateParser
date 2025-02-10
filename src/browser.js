@@ -34,21 +34,62 @@
         'night': 20     // 8 PM
     };
 
+    // Simple timezone offsets in hours (positive = ahead of UTC, negative = behind UTC)
+    const TIMEZONE_OFFSETS = {
+        'pst': -8, 'pdt': -7,
+        'mst': -7, 'mdt': -6,
+        'cst': -6, 'cdt': -5,
+        'est': -5, 'edt': -4,
+        'utc': 0, 'gmt': 0,
+        'bst': 1,  // British Summer Time
+        'cet': 1,  // Central European Time
+        'ist': 5.5 // Indian Standard Time
+    };
+
     class DumbDateParser {
         constructor(options = {}) {
             this.options = options;
             this.defaultYear = options.defaultYear || new Date().getFullYear();
             this.pastDatesAllowed = options.pastDatesAllowed || false;
+            this.defaultTimezone = options.defaultTimezone || null;
+            // Store the reference date to ensure consistency
+            this._referenceDate = new Date();
         }
 
         static parseDate(text) {
             return new DumbDateParser().parse(text);
         }
 
+        // Helper to create dates relative to reference date
+        _createDate() {
+            const date = new Date(this._referenceDate);
+            return date;
+        }
+
         parse(text) {
             if (!text) return null;
             text = text.toLowerCase().trim();
 
+            // Reset reference date for each parse
+            this._referenceDate = new Date();
+
+            // Extract timezone if present
+            let timezone = null;
+            Object.keys(TIMEZONE_OFFSETS).forEach(tz => {
+                if (text.includes(` ${tz}`)) {
+                    timezone = tz;
+                    text = text.replace(` ${tz}`, '');
+                }
+            });
+
+            // Extract time-of-day indicators before splitting
+            let timeOfDay = null;
+            const timeMatch = text.match(/(morning|afternoon|evening|night)/);
+            if (timeMatch) {
+                timeOfDay = timeMatch[1];
+                text = text.replace(` ${timeOfDay}`, '').replace(`${timeOfDay}`, '').trim();
+            }
+            
             // Split into date and time parts if "at" is present
             const parts = text.split(' at ');
             let date = null;
@@ -68,11 +109,20 @@
             // Parse the time part if it exists
             if (parts.length > 1) {
                 this._applyTime(date, parts[1]);
-            } else {
-                // Check if the original text contains time-of-day indicators
-                const timeMatch = text.match(/(morning|afternoon|evening|night)/);
-                if (timeMatch) {
-                    date.setHours(TIME_DEFAULTS[timeMatch[1]], 0, 0, 0);
+            } else if (timeOfDay) {
+                // Apply extracted time-of-day
+                date.setHours(TIME_DEFAULTS[timeOfDay], 0, 0, 0);
+            }
+
+            // Apply timezone offset if specified
+            if (timezone || this.defaultTimezone) {
+                const tz = timezone || this.defaultTimezone;
+                const offset = TIMEZONE_OFFSETS[tz];
+                if (offset !== undefined) {
+                    // Convert to UTC, then apply the timezone offset
+                    const localOffset = date.getTimezoneOffset();
+                    date.setMinutes(date.getMinutes() + localOffset); // Convert to UTC
+                    date.setMinutes(date.getMinutes() - (offset * 60)); // Apply timezone offset
                 }
             }
             
@@ -118,25 +168,26 @@
         }
 
         _parseRelative(text) {
-            const today = new Date();
-            
-            if (text === 'today') return today;
+            if (text === 'today') return this._createDate();
             if (text === 'tomorrow') {
-                today.setDate(today.getDate() + 1);
-                return today;
+                const date = this._createDate();
+                date.setDate(date.getDate() + 1);
+                return date;
             }
             if (text === 'yesterday') {
-                today.setDate(today.getDate() - 1);
-                return today;
+                const date = this._createDate();
+                date.setDate(date.getDate() - 1);
+                return date;
             }
 
             const nextMatch = text.match(/^next (week|month|year)$/);
             if (nextMatch) {
+                const date = this._createDate();
                 const unit = nextMatch[1];
-                if (unit === 'week') today.setDate(today.getDate() + 7);
-                if (unit === 'month') today.setMonth(today.getMonth() + 1);
-                if (unit === 'year') today.setFullYear(today.getFullYear() + 1);
-                return today;
+                if (unit === 'week') date.setDate(date.getDate() + 7);
+                if (unit === 'month') date.setMonth(date.getMonth() + 1);
+                if (unit === 'year') date.setFullYear(date.getFullYear() + 1);
+                return date;
             }
 
             return null;
@@ -145,10 +196,9 @@
         _parseSingleDay(text) {
             for (const [day, value] of Object.entries(DAYS)) {
                 if (text === day) {
-                    const date = new Date();
-                    const currentDay = date.getDay();
-                    const diff = value - currentDay;
-                    date.setDate(date.getDate() + (diff <= 0 ? diff + 7 : diff));
+                    const date = this._createDate();
+                    const diff = (7 + value - date.getDay()) % 7;
+                    date.setDate(date.getDate() + (diff === 0 ? 7 : diff));
                     return date;
                 }
             }
@@ -158,10 +208,9 @@
         _parseNextDay(text) {
             for (const [day, value] of Object.entries(DAYS)) {
                 if (text === `next ${day}`) {
-                    const date = new Date();
-                    const currentDay = date.getDay();
-                    const diff = value - currentDay;
-                    date.setDate(date.getDate() + (diff <= 0 ? diff + 7 : diff));
+                    const date = this._createDate();
+                    const diff = (7 + value - date.getDay()) % 7;
+                    date.setDate(date.getDate() + (diff === 0 ? 7 : diff));
                     return date;
                 }
             }
@@ -178,7 +227,7 @@
 
             if (monthNum === undefined || day < 1 || day > 31) return null;
 
-            const date = new Date();
+            const date = this._createDate();
             date.setMonth(monthNum);
             date.setDate(day);
 
@@ -200,7 +249,7 @@
 
             if (month < 0 || month > 11 || day < 1 || day > 31) return null;
 
-            const date = new Date();
+            const date = this._createDate();
             date.setMonth(month);
             date.setDate(day);
 

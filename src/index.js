@@ -33,15 +33,56 @@ const TIME_DEFAULTS = {
     'night': 20     // 8 PM
 };
 
+// Simple timezone offsets in hours (positive = ahead of UTC, negative = behind UTC)
+const TIMEZONE_OFFSETS = {
+    'pst': -8, 'pdt': -7,
+    'mst': -7, 'mdt': -6,
+    'cst': -6, 'cdt': -5,
+    'est': -5, 'edt': -4,
+    'utc': 0, 'gmt': 0,
+    'bst': 1,  // British Summer Time
+    'cet': 1,  // Central European Time
+    'ist': 5.5 // Indian Standard Time
+};
+
 class DumbDateParser {
     constructor(options = {}) {
         this.defaultYear = options.defaultYear || new Date().getFullYear();
         this.pastDatesAllowed = options.pastDatesAllowed || false;
+        this.defaultTimezone = options.defaultTimezone || null;
+        // Store the reference date to ensure consistency
+        this._referenceDate = new Date();
+    }
+
+    // Helper to create dates relative to reference date
+    _createDate() {
+        const date = new Date(this._referenceDate);
+        return date;
     }
 
     parse(text) {
         if (!text) return null;
         text = text.toLowerCase().trim();
+        
+        // Reset reference date for each parse
+        this._referenceDate = new Date();
+        
+        // Extract timezone if present
+        let timezone = null;
+        Object.keys(TIMEZONE_OFFSETS).forEach(tz => {
+            if (text.includes(` ${tz}`)) {
+                timezone = tz;
+                text = text.replace(` ${tz}`, '');
+            }
+        });
+
+        // Extract time-of-day indicators before splitting
+        let timeOfDay = null;
+        const timeMatch = text.match(/(morning|afternoon|evening|night)/);
+        if (timeMatch) {
+            timeOfDay = timeMatch[1];
+            text = text.replace(` ${timeOfDay}`, '').replace(`${timeOfDay}`, '').trim();
+        }
         
         // Split into date and time parts if "at" is present
         const parts = text.split(' at ');
@@ -62,11 +103,20 @@ class DumbDateParser {
         // Parse the time part if it exists
         if (parts.length > 1) {
             this._applyTime(date, parts[1]);
-        } else {
-            // Check if the original text contains time-of-day indicators
-            const timeMatch = text.match(/(morning|afternoon|evening|night)/);
-            if (timeMatch) {
-                date.setHours(TIME_DEFAULTS[timeMatch[1]], 0, 0, 0);
+        } else if (timeOfDay) {
+            // Apply extracted time-of-day
+            date.setHours(TIME_DEFAULTS[timeOfDay], 0, 0, 0);
+        }
+
+        // Apply timezone offset if specified
+        if (timezone || this.defaultTimezone) {
+            const tz = timezone || this.defaultTimezone;
+            const offset = TIMEZONE_OFFSETS[tz];
+            if (offset !== undefined) {
+                // Convert to UTC, then apply the timezone offset
+                const localOffset = date.getTimezoneOffset();
+                date.setMinutes(date.getMinutes() + localOffset); // Convert to UTC
+                date.setMinutes(date.getMinutes() - (offset * 60)); // Apply timezone offset
             }
         }
         
@@ -113,9 +163,9 @@ class DumbDateParser {
 
     _parseRelative(text) {
         // Handle today/tomorrow with shorthand
-        if (text === 'today' || text === 'tod') return new Date();
+        if (text === 'today' || text === 'tod') return this._createDate();
         if (text === 'tomorrow' || text === 'tom') {
-            const date = new Date();
+            const date = this._createDate();
             date.setDate(date.getDate() + 1);
             return date;
         }
@@ -123,14 +173,14 @@ class DumbDateParser {
         // Handle "in X days/weeks"
         const inDaysMatch = text.match(/in (\d+) days?/);
         if (inDaysMatch) {
-            const date = new Date();
+            const date = this._createDate();
             date.setDate(date.getDate() + parseInt(inDaysMatch[1]));
             return date;
         }
 
         const inWeeksMatch = text.match(/in (\d+) weeks?/);
         if (inWeeksMatch) {
-            const date = new Date();
+            const date = this._createDate();
             date.setDate(date.getDate() + (parseInt(inWeeksMatch[1]) * 7));
             return date;
         }
@@ -142,15 +192,12 @@ class DumbDateParser {
         // Check if the input is just a day name
         if (text in DAYS) {
             const targetDay = DAYS[text];
-            const today = new Date();
-            const result = new Date(today);
+            const date = this._createDate();
             
-            result.setDate(result.getDate() + (7 + targetDay - result.getDay()) % 7);
-            if (result <= today) {
-                result.setDate(result.getDate() + 7);
-            }
+            const diff = (7 + targetDay - date.getDay()) % 7;
+            date.setDate(date.getDate() + (diff === 0 ? 7 : diff));
             
-            return result;
+            return date;
         }
         return null;
     }
@@ -160,15 +207,12 @@ class DumbDateParser {
         if (!nextDayMatch) return null;
 
         const targetDay = DAYS[nextDayMatch[1]];
-        const today = new Date();
-        const result = new Date(today);
+        const date = this._createDate();
         
-        result.setDate(result.getDate() + (7 + targetDay - result.getDay()) % 7);
-        if (result <= today) {
-            result.setDate(result.getDate() + 7);
-        }
+        const diff = (7 + targetDay - date.getDay()) % 7;
+        date.setDate(date.getDate() + (diff === 0 ? 7 : diff));
         
-        return result;
+        return date;
     }
 
     _parseOrdinalDay(text) {

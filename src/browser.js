@@ -27,7 +27,8 @@
         'dec': 11, 'december': 11
     };
 
-    const TIME_DEFAULTS = {
+    // Default times that can be overridden
+    const DEFAULT_TIMES = {
         'morning': 5,    // 5 AM
         'afternoon': 12, // 12 PM
         'evening': 17,   // 5 PM
@@ -52,6 +53,11 @@
             this.defaultYear = options.defaultYear || new Date().getFullYear();
             this.pastDatesAllowed = options.pastDatesAllowed || false;
             this.defaultTimezone = options.defaultTimezone || null;
+            // Allow overriding time defaults through constructor options
+            this.timeDefaults = {
+                ...DEFAULT_TIMES,
+                ...(options.timeDefaults || {})
+            };
             // Store the reference date to ensure consistency
             this._referenceDate = new Date();
         }
@@ -111,7 +117,7 @@
                 this._applyTime(date, parts[1]);
             } else if (timeOfDay) {
                 // Apply extracted time-of-day
-                date.setHours(TIME_DEFAULTS[timeOfDay], 0, 0, 0);
+                date.setHours(this.timeDefaults[timeOfDay], 0, 0, 0);
             }
 
             // Apply timezone offset if specified
@@ -158,9 +164,9 @@
                 }
             }
             
-            // Try time-of-day words
-            if (timeStr in TIME_DEFAULTS) {
-                date.setHours(TIME_DEFAULTS[timeStr], 0, 0, 0);
+            // Try time-of-day words using instance-specific defaults
+            if (timeStr in this.timeDefaults) {
+                date.setHours(this.timeDefaults[timeStr], 0, 0, 0);
                 return true;
             }
             

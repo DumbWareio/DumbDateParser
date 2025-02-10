@@ -26,11 +26,32 @@ const MONTHS = {
     'dec': 11, 'december': 11
 };
 
-const TIME_DEFAULTS = {
+// Default times that can be overridden
+const DEFAULT_TIMES = {
     'morning': 5,    // 5 AM
     'afternoon': 12, // 12 PM
     'evening': 17,   // 5 PM
     'night': 20     // 8 PM
+};
+
+// Get time from environment variable or use default
+function getTimeDefault(period) {
+    if (typeof process !== 'undefined' && process.env) {
+        const envVar = `DUMB_TIME_${period.toUpperCase()}`;
+        const envValue = process.env[envVar];
+        if (envValue && !isNaN(parseInt(envValue))) {
+            return parseInt(envValue);
+        }
+    }
+    return DEFAULT_TIMES[period];
+}
+
+// Initialize TIME_DEFAULTS with values from env or defaults
+const TIME_DEFAULTS = {
+    'morning': getTimeDefault('morning'),
+    'afternoon': getTimeDefault('afternoon'),
+    'evening': getTimeDefault('evening'),
+    'night': getTimeDefault('night')
 };
 
 // Simple timezone offsets in hours (positive = ahead of UTC, negative = behind UTC)
@@ -50,6 +71,11 @@ class DumbDateParser {
         this.defaultYear = options.defaultYear || new Date().getFullYear();
         this.pastDatesAllowed = options.pastDatesAllowed || false;
         this.defaultTimezone = options.defaultTimezone || null;
+        // Allow overriding time defaults through constructor options
+        this.timeDefaults = {
+            ...TIME_DEFAULTS,
+            ...(options.timeDefaults || {})
+        };
         // Store the reference date to ensure consistency
         this._referenceDate = new Date();
     }
@@ -152,9 +178,9 @@ class DumbDateParser {
             }
         }
         
-        // Try time-of-day words
-        if (timeStr in TIME_DEFAULTS) {
-            date.setHours(TIME_DEFAULTS[timeStr], 0, 0, 0);
+        // Try time-of-day words using instance-specific defaults
+        if (timeStr in this.timeDefaults) {
+            date.setHours(this.timeDefaults[timeStr], 0, 0, 0);
             return true;
         }
         

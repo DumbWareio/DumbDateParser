@@ -147,4 +147,48 @@ test('parses day with time-of-day', () => {
     assert(result2.getDay() === 5, 'Should be a Friday');
     assert(result2.getHours() === 5, 'Should be 5 AM');
     assert(result2 > new Date(), 'Should be in the future');
+});
+
+test('handles custom time defaults through options', () => {
+    const customParser = new DumbDateParser({
+        timeDefaults: {
+            'morning': 7,    // 7 AM
+            'afternoon': 13, // 1 PM
+            'evening': 18,   // 6 PM
+            'night': 22     // 10 PM
+        }
+    });
+
+    let result = customParser.parse('tomorrow morning');
+    assert(result.getHours() === 7, 'Morning should be customized to 7 AM');
+
+    result = customParser.parse('today afternoon');
+    assert(result.getHours() === 13, 'Afternoon should be customized to 1 PM');
+
+    result = customParser.parse('today evening');
+    assert(result.getHours() === 18, 'Evening should be customized to 6 PM');
+
+    result = customParser.parse('today night');
+    assert(result.getHours() === 22, 'Night should be customized to 10 PM');
+});
+
+test('handles partial time default overrides', () => {
+    const partialParser = new DumbDateParser({
+        timeDefaults: {
+            'morning': 8,  // Only override morning
+            'night': 21   // Only override night
+        }
+    });
+
+    let result = partialParser.parse('tomorrow morning');
+    assert(result.getHours() === 8, 'Morning should be customized to 8 AM');
+
+    result = partialParser.parse('today afternoon');
+    assert(result.getHours() === 12, 'Afternoon should use default of 12 PM');
+
+    result = partialParser.parse('today evening');
+    assert(result.getHours() === 17, 'Evening should use default of 5 PM');
+
+    result = partialParser.parse('today night');
+    assert(result.getHours() === 21, 'Night should be customized to 9 PM');
 }); 

@@ -305,25 +305,27 @@
                 return result;
             }
 
-            // Match formats like "mm/dd", "mm-dd", "mm.dd"
-            const match = text.match(/^(\d{1,2})[\/\-\.](\d{1,2})$/);
-            if (!match) return null;
+            // Handle day + month (e.g., "15 march" or "march 15" or "15th march" or "march 15th")
+            const dateMatch = text.match(/(?:(\d{1,2})(?:st|nd|rd|th)?\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december))|(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)\s*(\d{1,2})(?:st|nd|rd|th)?/);
+            if (!dateMatch) return null;
 
-            const month = parseInt(match[1]) - 1;
-            const day = parseInt(match[2]);
-
-            if (month < 0 || month > 11 || day < 1 || day > 31) return null;
-
-            const date = this._createDate();
-            date.setMonth(month);
-            date.setDate(day);
-
-            // If the date is in the past, move to next year
-            if (date < new Date()) {
-                date.setFullYear(date.getFullYear() + 1);
+            let day, month;
+            if (dateMatch[1]) {
+                day = parseInt(dateMatch[1]);
+                month = MONTHS[dateMatch[2]];
+            } else {
+                day = parseInt(dateMatch[4]);
+                month = MONTHS[dateMatch[3]];
             }
 
-            return date;
+            const result = new Date(this.defaultYear, month, day);
+            
+            // If date is in the past and past dates aren't allowed, move to next year
+            if (!this.pastDatesAllowed && result < new Date()) {
+                result.setFullYear(result.getFullYear() + 1);
+            }
+            
+            return result;
         }
 
         _parseDirectDate(text) {

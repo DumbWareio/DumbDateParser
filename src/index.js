@@ -290,8 +290,8 @@ class DumbDateParser {
             return result;
         }
 
-        // Handle day + month (e.g., "15 march" or "march 15")
-        const dateMatch = text.match(/(?:(\d{1,2})\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december))|(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)\s*(\d{1,2})/);
+        // Handle day + month (e.g., "15 march" or "march 15" or "15th march" or "march 15th")
+        const dateMatch = text.match(/(?:(\d{1,2})(?:st|nd|rd|th)?\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december))|(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)\s*(\d{1,2})(?:st|nd|rd|th)?/);
         if (!dateMatch) return null;
 
         let day, month;

@@ -64,6 +64,14 @@ const date = parser.parse('next friday');
   - `15th march`
   - `23rd of december`
 
+- Month Day Year formats:
+  - `jun 23 2026`
+  - `december 31 2025`
+  
+- Day Month Year formats:
+  - `23 june 2026`
+  - `1 january 2030`
+
 - Simple dates:
   - `mm/dd`
   - `mm-dd`
@@ -73,6 +81,7 @@ const date = parser.parse('next friday');
   - `yyyy/mm/dd`
   - `yyyy-mm-dd`
   - `yyyy.mm.dd`
+  - `yyyymmdd` (compact format, e.g., `20260623`)
 
 ## Time and Timezone Support
 
@@ -156,6 +165,26 @@ tzParser.parse('tomorrow at 3pm');        // Interpreted as 3 PM EST
 ## Why So Dumb?
 
 At DumbWare, we believe in the power of stupid simple solutions. This date parser doesn't try to be clever - it just does what you'd expect. No fancy algorithms, no complex rules, just pure, unadulterated simplicity that somehow gets the job done.
+
+## Dual-File Structure
+
+This library includes two main files:
+
+- `index.js`: For Node.js and modern bundlers (supports ES modules)
+- `browser.js`: For direct browser usage without bundling (exposes a global `DumbDateParser` object)
+
+This design gives you flexibility in how you use the library:
+
+```javascript
+// Modern JavaScript with bundlers or Node.js
+import DumbDateParser from 'dumbdateparser';
+
+// Direct browser usage via <script> tag
+// window.DumbDateParser is available globally
+const parser = new DumbDateParser();
+```
+
+Both files provide identical functionality with environment-appropriate implementations.
 
 ## License
 

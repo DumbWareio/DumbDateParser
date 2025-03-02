@@ -96,18 +96,35 @@
                 text = text.replace(` ${timeOfDay}`, '').replace(`${timeOfDay}`, '').trim();
             }
             
+            // Check for 4-digit year pattern and prioritize date formats with explicit years
+            const hasYear = /\b\d{4}\b/.test(text);
+            
             // Split into date and time parts if "at" is present
             const parts = text.split(' at ');
             let date = null;
             
             // Parse the date part
             if (parts.length > 0) {
-                date = this._parseRelative(parts[0]) ||
-                       this._parseSingleDay(parts[0]) ||
-                       this._parseNextDay(parts[0]) ||
-                       this._parseOrdinalDay(parts[0]) ||
-                       this._parseSimpleDate(parts[0]) ||
-                       this._parseDirectDate(parts[0]);
+                // If the text contains a year, try date formats with years first
+                if (hasYear) {
+                    date = this._parseFormattedDate(parts[0]) || 
+                           this._parseDirectDate(parts[0]);
+                }
+                
+                // If no date was found or no year was present, try the other formats
+                if (!date) {
+                    date = this._parseRelative(parts[0]) ||
+                           this._parseSingleDay(parts[0]) ||
+                           this._parseNextDay(parts[0]) ||
+                           this._parseOrdinalDay(parts[0]) ||
+                           this._parseSimpleDate(parts[0]);
+                    
+                    // As a last resort, try the date formats with years and direct parsing
+                    if (!date && !hasYear) {
+                        date = this._parseFormattedDate(parts[0]) || 
+                               this._parseDirectDate(parts[0]);
+                    }
+                }
             }
             
             if (!date) return null;
@@ -317,8 +334,16 @@
                 day = parseInt(dateMatch[4]);
                 month = MONTHS[dateMatch[3]];
             }
+            
+            // Basic validation before creating the date
+            if (month === undefined || day < 1 || day > 31) return null;
 
             const result = new Date(this.defaultYear, month, day);
+            
+            // Validate that the date is actually valid
+            // If the month or day in the result doesn't match what we set,
+            // it means the date was invalid (e.g., Feb 31, Jun 32)
+            if (result.getMonth() !== month || result.getDate() !== day) return null;
             
             // If date is in the past and past dates aren't allowed, move to next year
             if (!this.pastDatesAllowed && result < new Date()) {
@@ -328,18 +353,189 @@
             return result;
         }
 
+        _parseFormattedDate(text) {
+            // First check for year patterns in the text - very strict to avoid false positives
+            const yearPattern = /\b(\d{4})\b/;
+            const yearMatch = text.match(yearPattern);
+            if (!yearMatch) return null;
+            
+            const year = parseInt(yearMatch[1]);
+            if (year < 1000) return null;
+            
+            // Match formats like "jun 23 2026" or "jun 23, 2026" (with optional comma)
+            const monthDayYearMatch = text.match(/^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)\s+(\d{1,2})(?:st|nd|rd|th)?(?:,)?\s+(\d{4})$/);
+            if (monthDayYearMatch) {
+                const month = MONTHS[monthDayYearMatch[1]];
+                const day = parseInt(monthDayYearMatch[2]);
+                const year = parseInt(monthDayYearMatch[3]);
+
+                if (month === undefined || day < 1 || day > 31 || year < 1000) return null;
+                
+                // Explicitly create a date with the specified year
+                const result = new Date(year, month, day);
+                
+                // Check if the resulting date is valid (e.g., not Feb 31)
+                if (result.getMonth() !== month || result.getDate() !== day) return null;
+                
+                return result;
+            }
+
+            // Match formats like "23 june 2026" or "23, june 2026" (with optional comma)
+            const dayMonthYearMatch = text.match(/^(\d{1,2})(?:st|nd|rd|th)?(?:,)?\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)(?:,)?\s+(\d{4})$/);
+            if (dayMonthYearMatch) {
+                const day = parseInt(dayMonthYearMatch[1]);
+                const month = MONTHS[dayMonthYearMatch[2]];
+                const year = parseInt(dayMonthYearMatch[3]);
+
+                if (month === undefined || day < 1 || day > 31 || year < 1000) return null;
+                
+                // Explicitly create a date with the specified year
+                const result = new Date(year, month, day);
+                
+                // Check if the resulting date is valid (e.g., not Feb 31)
+                if (result.getMonth() !== month || result.getDate() !== day) return null;
+                
+                return result;
+            }
+
+            // Match slash-separated formats like "23/jun/2026" or "23/june/2026"
+            const slashDateMatch = text.match(/^(\d{1,2})[\/\\]+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)[\/\\]+(\d{4})$/);
+            if (slashDateMatch) {
+                const day = parseInt(slashDateMatch[1]);
+                const month = MONTHS[slashDateMatch[2]];
+                const year = parseInt(slashDateMatch[3]);
+
+                if (month === undefined || day < 1 || day > 31 || year < 1000) return null;
+                
+                // Explicitly create a date with the specified year
+                const result = new Date(year, month, day);
+                
+                // Check if the resulting date is valid
+                if (result.getMonth() !== month || result.getDate() !== day) return null;
+                
+                return result;
+            }
+
+            // Also match formats with ordinals like "jun 23rd 2026" or "23rd june 2026"
+            const monthOrdinalYearMatch = text.match(/^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)\s+(\d{1,2})(st|nd|rd|th)\s+(\d{4})$/);
+            if (monthOrdinalYearMatch) {
+                const month = MONTHS[monthOrdinalYearMatch[1]];
+                const day = parseInt(monthOrdinalYearMatch[2]);
+                const year = parseInt(monthOrdinalYearMatch[4]);
+
+                if (month === undefined || day < 1 || day > 31 || year < 1000) return null;
+                
+                // Explicitly create a date with the specified year
+                const result = new Date(year, month, day);
+                
+                // Check if the resulting date is valid (e.g., not Feb 31)
+                if (result.getMonth() !== month || result.getDate() !== day) return null;
+                
+                return result;
+            }
+
+            const ordinalMonthYearMatch = text.match(/^(\d{1,2})(st|nd|rd|th)\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)\s+(\d{4})$/);
+            if (ordinalMonthYearMatch) {
+                const day = parseInt(ordinalMonthYearMatch[1]);
+                const month = MONTHS[ordinalMonthYearMatch[3]];
+                const year = parseInt(ordinalMonthYearMatch[4]);
+
+                if (month === undefined || day < 1 || day > 31 || year < 1000) return null;
+                
+                // Explicitly create a date with the specified year
+                const result = new Date(year, month, day);
+                
+                // Check if the resulting date is valid (e.g., not Feb 31)
+                if (result.getMonth() !== month || result.getDate() !== day) return null;
+                
+                return result;
+            }
+
+            // If none of the specific patterns matched but we found a year,
+            // check for "month day year" or "day month year" in any format
+            const genericMonthDayYearMatch = text.match(/(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)\s+(\d{1,2})(?:st|nd|rd|th)?\s+(\d{4})/);
+            if (genericMonthDayYearMatch) {
+                const month = MONTHS[genericMonthDayYearMatch[1]];
+                const day = parseInt(genericMonthDayYearMatch[2]);
+                const year = parseInt(genericMonthDayYearMatch[3]);
+                
+                if (month === undefined || day < 1 || day > 31 || year < 1000) return null;
+                
+                const result = new Date(year, month, day);
+                if (result.getMonth() !== month || result.getDate() !== day) return null;
+                
+                return result;
+            }
+            
+            const genericDayMonthYearMatch = text.match(/(\d{1,2})(?:st|nd|rd|th)?\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)\s+(\d{4})/);
+            if (genericDayMonthYearMatch) {
+                const day = parseInt(genericDayMonthYearMatch[1]);
+                const month = MONTHS[genericDayMonthYearMatch[2]];
+                const year = parseInt(genericDayMonthYearMatch[3]);
+                
+                if (month === undefined || day < 1 || day > 31 || year < 1000) return null;
+                
+                const result = new Date(year, month, day);
+                if (result.getMonth() !== month || result.getDate() !== day) return null;
+                
+                return result;
+            }
+
+            return null;
+        }
+
         _parseDirectDate(text) {
             // Match formats like "yyyy/mm/dd", "yyyy-mm-dd", "yyyy.mm.dd"
             const match = text.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})$/);
-            if (!match) return null;
+            if (match) {
+                const year = parseInt(match[1]);
+                const month = parseInt(match[2]) - 1;
+                const day = parseInt(match[3]);
 
-            const year = parseInt(match[1]);
-            const month = parseInt(match[2]) - 1;
-            const day = parseInt(match[3]);
+                if (month < 0 || month > 11 || day < 1 || day > 31) return null;
+                
+                // Create a date with the specified year
+                const result = new Date(year, month, day);
+                
+                // Check if the resulting date is valid (e.g., not Feb 31)
+                if (result.getMonth() !== month || result.getDate() !== day) return null;
+                
+                return result;
+            }
 
-            if (month < 0 || month > 11 || day < 1 || day > 31) return null;
+            // Match compact YYYYMMDD format
+            const compactMatch = text.match(/^(\d{4})(\d{2})(\d{2})$/);
+            if (compactMatch) {
+                const year = parseInt(compactMatch[1]);
+                const month = parseInt(compactMatch[2]) - 1;
+                const day = parseInt(compactMatch[3]);
 
-            return new Date(year, month, day);
+                if (month < 0 || month > 11 || day < 1 || day > 31) return null;
+                
+                // Create a date with the specified year
+                const result = new Date(year, month, day);
+                
+                // Check if the resulting date is valid (e.g., not Feb 31)
+                if (result.getMonth() !== month || result.getDate() !== day) return null;
+                
+                return result;
+            }
+
+            // Match cases with a year and possibly incomplete date
+            // BUT ONLY when the string consists of just a 4-digit year
+            const yearMatch = text.match(/^(\d{4})$/);
+            if (yearMatch) {
+                const year = parseInt(yearMatch[1]);
+                if (year < 1000) return null;
+                
+                // Return the first day of the year if only the year is provided
+                return new Date(year, 0, 1);
+            }
+
+            // Do NOT try to parse arbitrary text containing years
+            // Like "jun 32 2026" - there's no standard for this
+            
+            return null;
         }
     }
 

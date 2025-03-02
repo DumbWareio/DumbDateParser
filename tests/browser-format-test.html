@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DumbDateParser Browser Test</title>
+  <style>
+    :root {
+      --bg-color: #0D1117;
+      --text-color: #c9d1d9;
+      --border-color: #30363d;
+      --hover-color: #161b22;
+      --accent-color: #58a6ff;
+      --code-bg: #161b22;
+      --pass-color: #3fb950;
+      --fail-color: #f85149;
+      --warn-color: #d29922;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg-color: #f6f8fa;
+        --text-color: #24292e;
+        --border-color: #d0d7de;
+        --hover-color: #f6f8fa;
+        --accent-color: #0969da;
+        --code-bg: #f6f8fa;
+      }
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      line-height: 1.5;
+      padding: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      background: var(--bg-color);
+      color: var(--text-color);
+    }
+
+    .header {
+      margin-bottom: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      margin-bottom: 0.5rem;
+    }
+
+    .summary {
+      display: flex;
+      gap: 1rem;
+      margin: 1rem 0;
+      font-size: 1.1rem;
+      padding: 1rem;
+      background: var(--code-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+    }
+
+    .summary-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .summary-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    .test-groups {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 1rem;
+    }
+
+    .test-group {
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      background: var(--hover-color);
+    }
+
+    .group-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+
+    .group-stats {
+      font-weight: bold;
+    }
+
+    .test-item {
+      padding: 0.75rem;
+      margin-bottom: 0.75rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+
+    .pass {
+      background-color: rgba(63, 185, 80, 0.1);
+      border-left: 4px solid var(--pass-color);
+    }
+
+    .fail {
+      background-color: rgba(248, 81, 73, 0.1);
+      border-left: 4px solid var(--fail-color);
+    }
+
+    .error {
+      background-color: rgba(210, 153, 34, 0.1);
+      border-left: 4px solid var(--warn-color);
+    }
+
+    .test-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      font-weight: bold;
+    }
+
+    .test-input {
+      font-family: monospace;
+      background: var(--code-bg);
+      padding: 0.2rem 0.4rem;
+      border-radius: 3px;
+    }
+
+    .test-result {
+      color: var(--pass-color);
+    }
+
+    .test-result.fail {
+      color: var(--fail-color);
+    }
+
+    .test-result.error {
+      color: var(--warn-color);
+    }
+
+    pre {
+      background-color: var(--code-bg);
+      padding: 0.5rem;
+      border-radius: 4px;
+      overflow-x: auto;
+      margin: 0.5rem 0;
+      font-size: 0.85rem;
+    }
+
+    .test-details {
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      opacity: 0.8;
+    }
+
+    .toggle-group {
+      cursor: pointer;
+      padding: 0.2rem 0.4rem;
+      border-radius: 3px;
+      background: var(--accent-color);
+      color: white;
+      font-size: 0.8rem;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .test-all {
+      display: block;
+      margin: 1rem auto;
+      padding: 0.75rem 1.5rem;
+      background: var(--accent-color);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .test-all:hover {
+      opacity: 0.9;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+
+      .test-groups {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>DumbDateParser Browser Test</h1>
+    <p>A comprehensive test suite for the DumbDateParser library</p>
+  </div>
+  
+  <div class="summary" id="summary">
+    <div class="summary-item">
+      <div class="summary-value" id="total-tests">0</div>
+      <div>Total Tests</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-value" id="passed-tests">0</div>
+      <div>Passed</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-value" id="failed-tests">0</div>
+      <div>Failed</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-value" id="pass-percentage">0%</div>
+      <div>Success Rate</div>
+    </div>
+  </div>
+  
+  <button class="test-all" id="run-tests">Run All Tests</button>
+  
+  <div class="test-groups" id="test-groups"></div>
+  
+  <script src="../src/browser.js"></script>
+  <script>
+    // Helper function to format dates consistently for comparison
+    function formatDate(date) {
+      return date ? 
+        `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}` : 
+        'null';
+    }
+    
+    // More detailed formatting for display
+    function formatDetailedDate(date) {
+      if (!date) return 'null';
+      
+      return `${date.toISOString()} (${date.toLocaleString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZoneName: 'short'
+      })})`;
+    }
+    
+    // Test function
+    function test(input, expected, description = '') {
+      const parser = new DumbDateParser({
+        pastDatesAllowed: true // Allow past dates for consistent testing
+      });
+      
+      try {
+        const result = parser.parse(input);
+        const formattedResult = formatDate(result);
+        const success = formattedResult === expected;
+        
+        return {
+          input,
+          result: formattedResult,
+          detailedResult: formatDetailedDate(result),
+          expected,
+          description,
+          success,
+          status: success ? 'pass' : 'fail'
+        };
+      } catch (error) {
+        return {
+          input,
+          result: 'error',
+          detailedResult: error.message,
+          expected,
+          description,
+          success: false,
+          status: 'error',
+          error: error.message
+        };
+      }
+    }
+    
+    // Helper functions for day calculations
+    function getNextDayOfWeek(dayIndex) {
+      const today = new Date();
+      const todayDayIndex = today.getDay();
+      
+      // Calculate days to add
+      let daysToAdd = dayIndex - todayDayIndex;
+      if (daysToAdd <= 0) daysToAdd += 7; // If the day is today or in the past, get next week
+      
+      const result = new Date(today);
+      result.setDate(today.getDate() + daysToAdd);
+      return result;
+    }
+    
+    function getThisDayOfWeek(dayIndex) {
+      const today = new Date();
+      const todayDayIndex = today.getDay();
+      
+      // Calculate days to add
+      let daysToAdd = dayIndex - todayDayIndex;
+      if (daysToAdd < 0) daysToAdd += 7; // If the day is in the past, get next week
+      
+      const result = new Date(today);
+      result.setDate(today.getDate() + daysToAdd);
+      return result;
+    }
+    
+    function getNextMonthDay(monthIndex, day) {
+      const today = new Date();
+      const currentMonth = today.getMonth();
+      
+      let targetMonth = monthIndex;
+      let targetYear = today.getFullYear();
+      
+      // If the target month is earlier than the current month, go to next year
+      if (targetMonth < currentMonth) {
+        targetYear++;
+      } else if (targetMonth === currentMonth && day < today.getDate()) {
+        // If same month but day has passed, go to next year
+        targetYear++;
+      }
+      
+      return new Date(targetYear, targetMonth, day);
+    }
+    
+    // Define test groups
+    const testGroups = [
+      {
+        title: 'Relative Dates',
+        tests: [
+          { input: 'today', expected: formatDate(new Date()), description: 'Today' },
+          { input: 'tod', expected: formatDate(new Date()), description: 'Today abbreviation' },
+          { input: 'tomorrow', expected: formatDate(new Date(new Date().setDate(new Date().getDate() + 1))), description: 'Tomorrow' },
+          { input: 'tom', expected: formatDate(new Date(new Date().setDate(new Date().getDate() + 1))), description: 'Tomorrow abbreviation' },
+          { input: 'in 3 days', expected: formatDate(new Date(new Date().setDate(new Date().getDate() + 3))), description: 'In X days' },
+          { input: 'in 1 week', expected: formatDate(new Date(new Date().setDate(new Date().getDate() + 7))), description: 'In X weeks' },
+        ]
+      },
+      {
+        title: 'Day Names',
+        tests: [
+          { input: 'monday', expected: formatDate(getNextDayOfWeek(1)), description: 'Full day name' },
+          { input: 'mon', expected: formatDate(getNextDayOfWeek(1)), description: 'Abbreviated day name' },
+          { input: 'next friday', expected: formatDate(getNextDayOfWeek(5)), description: 'Next + day name' },
+          { input: 'this sunday', expected: formatDate(getThisDayOfWeek(0)), description: 'This + day name' },
+        ]
+      },
+      {
+        title: 'Month Day Year format',
+        tests: [
+          { input: 'jun 23 2026', expected: '2026-06-23', description: 'Short month name' },
+          { input: 'december 31 2025', expected: '2025-12-31', description: 'Full month name' },
+          { input: 'jan 1 2030', expected: '2030-01-01', description: 'Single digit day' }
+        ]
+      },
+      {
+        title: 'Day Month Year format',
+        tests: [
+          { input: '23 june 2026', expected: '2026-06-23', description: 'Full month name' },
+          { input: '1 january 2030', expected: '2030-01-01', description: 'Single digit day' },
+          { input: '12 feb 2028', expected: '2028-02-12', description: 'Short month name' }
+        ]
+      },
+      {
+        title: 'YYYYMMDD format',
+        tests: [
+          { input: '20260623', expected: '2026-06-23', description: 'Basic YYYYMMDD' },
+          { input: '20301231', expected: '2030-12-31', description: 'Year end' },
+          { input: '20300101', expected: '2030-01-01', description: 'Year start' }
+        ]
+      },
+      {
+        title: 'Ordinal formats',
+        tests: [
+          { input: '23rd june 2026', expected: '2026-06-23', description: 'Day + ordinal + month + year' },
+          { input: 'jun 23rd 2026', expected: '2026-06-23', description: 'Month + day + ordinal + year' },
+          { input: '1st of january', expected: formatDate(getNextMonthDay(0, 1)), description: 'Ordinal with "of"' }
+        ]
+      },
+      {
+        title: 'Combined with time',
+        tests: [
+          { input: 'tomorrow at 3pm', expected: formatDate(new Date(new Date().setDate(new Date().getDate() + 1))), description: 'Tomorrow + time' },
+          { input: 'june 23 2026 at 15:30', expected: '2026-06-23', description: 'Date + 24hr time' },
+          { input: 'mon at noon', expected: formatDate(getNextDayOfWeek(1)), description: 'Day + noon' }
+        ]
+      },
+      {
+        title: 'Time of day',
+        tests: [
+          { input: 'tomorrow morning', expected: formatDate(new Date(new Date().setDate(new Date().getDate() + 1))), description: 'With morning' },
+          { input: 'june 23 evening', expected: '2026-06-23', description: 'With evening' },
+        ]
+      },
+      {
+        title: 'Edge cases',
+        tests: [
+          { input: 'jun 32 2026', expected: 'null', description: 'Invalid day' },
+          { input: '20261332', expected: 'null', description: 'Invalid month' },
+          { input: '2026', expected: '2026-01-01', description: 'Just a year' },
+          { input: '', expected: 'null', description: 'Empty input' }
+        ]
+      },
+      {
+        title: 'Mixed formats',
+        tests: [
+          { input: 'jun 23, 2026', expected: '2026-06-23', description: 'With comma' },
+          { input: '23/jun/2026', expected: '2026-06-23', description: 'With slashes' },
+          { input: '23-jun-2026', expected: '2026-06-23', description: 'With hyphens' }
+        ]
+      },
+      {
+        title: 'Static methods',
+        tests: [
+          { input: 'jun 23 2026', expected: '2026-06-23', description: 'Using static parseDate', useStatic: true },
+          { input: 'tomorrow', expected: formatDate(new Date(new Date().setDate(new Date().getDate() + 1))), description: 'Static with relative date', useStatic: true }
+        ]
+      }
+    ];
+    
+    // Run tests and display results
+    function runTests() {
+      const groupsContainer = document.getElementById('test-groups');
+      groupsContainer.innerHTML = '';
+      
+      let totalTests = 0;
+      let totalPassed = 0;
+      let totalFailed = 0;
+      
+      testGroups.forEach(group => {
+        // Create group container
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'test-group';
+        
+        // Create group header
+        const groupHeader = document.createElement('div');
+        groupHeader.className = 'group-header';
+        
+        const heading = document.createElement('h2');
+        heading.textContent = group.title;
+        
+        const toggleButton = document.createElement('span');
+        toggleButton.className = 'toggle-group';
+        toggleButton.textContent = 'Hide';
+        toggleButton.onclick = () => {
+          const testsContainer = groupDiv.querySelector('.group-tests');
+          if (testsContainer.classList.contains('hidden')) {
+            testsContainer.classList.remove('hidden');
+            toggleButton.textContent = 'Hide';
+          } else {
+            testsContainer.classList.add('hidden');
+            toggleButton.textContent = 'Show';
+          }
+        };
+        
+        groupHeader.appendChild(heading);
+        groupHeader.appendChild(toggleButton);
+        groupDiv.appendChild(groupHeader);
+        
+        // Create tests container
+        const testsContainer = document.createElement('div');
+        testsContainer.className = 'group-tests';
+        
+        // Run tests and add to container
+        let groupPassed = 0;
+        const groupTotal = group.tests.length;
+        
+        group.tests.forEach(testCase => {
+          totalTests++;
+          
+          let testResult;
+          if (testCase.useStatic) {
+            try {
+              const result = DumbDateParser.parseDate(testCase.input);
+              const formattedResult = formatDate(result);
+              const success = formattedResult === testCase.expected;
+              
+              testResult = {
+                input: testCase.input,
+                result: formattedResult,
+                detailedResult: formatDetailedDate(result),
+                expected: testCase.expected,
+                description: testCase.description + ' (static)',
+                success,
+                status: success ? 'pass' : 'fail'
+              };
+            } catch (error) {
+              testResult = {
+                input: testCase.input,
+                result: 'error',
+                detailedResult: error.message,
+                expected: testCase.expected,
+                description: testCase.description + ' (static)',
+                success: false,
+                status: 'error',
+                error: error.message
+              };
+            }
+          } else {
+            testResult = test(testCase.input, testCase.expected, testCase.description);
+          }
+          
+          if (testResult.success) {
+            groupPassed++;
+            totalPassed++;
+          } else {
+            totalFailed++;
+          }
+          
+          const testDiv = document.createElement('div');
+          testDiv.className = `test-item ${testResult.status}`;
+          
+          const testHeader = document.createElement('div');
+          testHeader.className = 'test-header';
+          
+          const testDescription = document.createElement('div');
+          testDescription.textContent = testResult.description || 'Test';
+          
+          const testStatus = document.createElement('div');
+          testStatus.className = `test-result ${testResult.status}`;
+          testStatus.textContent = testResult.success ? '✓ PASS' : '✗ FAIL';
+          
+          testHeader.appendChild(testDescription);
+          testHeader.appendChild(testStatus);
+          testDiv.appendChild(testHeader);
+          
+          const testInfo = document.createElement('div');
+          testInfo.innerHTML = `Input: <span class="test-input">"${testResult.input}"</span>`;
+          testDiv.appendChild(testInfo);
+          
+          const testDetails = document.createElement('div');
+          testDetails.className = 'test-details';
+          if (testResult.status === 'error') {
+            testDetails.innerHTML = `
+              <div>Expected: ${testResult.expected}</div>
+              <div>Error: ${testResult.error}</div>
+            `;
+          } else {
+            testDetails.innerHTML = `
+              <div>Result: ${testResult.result}</div>
+              <div>Expected: ${testResult.expected}</div>
+              <div>Detailed: ${testResult.detailedResult}</div>
+            `;
+          }
+          testDiv.appendChild(testDetails);
+          
+          testsContainer.appendChild(testDiv);
+        });
+        
+        // Add group stats
+        const groupStats = document.createElement('div');
+        groupStats.className = 'group-stats';
+        groupStats.textContent = `${groupPassed}/${groupTotal} passed (${Math.round(groupPassed/groupTotal*100)}%)`;
+        groupHeader.appendChild(groupStats);
+        
+        groupDiv.appendChild(testsContainer);
+        groupsContainer.appendChild(groupDiv);
+      });
+      
+      // Update summary
+      document.getElementById('total-tests').textContent = totalTests;
+      document.getElementById('passed-tests').textContent = totalPassed;
+      document.getElementById('failed-tests').textContent = totalFailed;
+      document.getElementById('pass-percentage').textContent = `${Math.round(totalPassed/totalTests*100)}%`;
+    }
+    
+    // Set up run button
+    document.getElementById('run-tests').addEventListener('click', runTests);
+    
+    // Auto-run on page load
+    window.onload = runTests;
+  </script>
+</body>
+</html> 

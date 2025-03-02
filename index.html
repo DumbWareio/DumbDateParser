@@ -19,6 +19,13 @@
             --input-bg: #0d1117;
             --input-border: #30363d;
             --input-focus: #58a6ff;
+            --success-color: #3fb950;
+            --warning-color: #d29922;
+            --error-color: #f85149;
+            --debug-color: #8957e5;
+            --step-bg: #1c2128;
+            --step-success-bg: rgba(63, 185, 80, 0.1);
+            --step-fail-bg: rgba(248, 81, 73, 0.1);
         }
 
         @media (prefers-color-scheme: dark) {
@@ -30,6 +37,9 @@
                 --accent-color: #66b3ff;
                 --code-bg: #000000;
                 --code-color: #cccccc;
+                --step-bg: #2a2a2a;
+                --step-success-bg: rgba(63, 185, 80, 0.15);
+                --step-fail-bg: rgba(248, 81, 73, 0.15);
             }
             .logo svg {
                 filter: invert(1);
@@ -124,7 +134,7 @@
             box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.2);
         }
 
-        .result-section, .code-section {
+        .result-section, .code-section, .debug-section {
             margin: 16px 0;
             padding: 16px;
             border-radius: 6px;
@@ -132,9 +142,44 @@
             border: 1px solid var(--border-color);
         }
 
-        .code-section {
+        .code-section, .debug-section {
             font-family: 'SF Mono', Monaco, Consolas, monospace;
             overflow-x: auto;
+        }
+
+        .debug-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .parsing-step {
+            padding: 8px 12px;
+            border-radius: 4px;
+            background: var(--step-bg);
+            border-left: 4px solid var(--border-color);
+            font-size: 0.9em;
+            transition: background-color 0.2s;
+        }
+
+        .parsing-step.success {
+            background: var(--step-success-bg);
+            border-left-color: var(--success-color);
+        }
+
+        .parsing-step.fail {
+            background: var(--step-fail-bg);
+            border-left-color: var(--error-color);
+        }
+
+        .parsing-step .step-name {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .parsing-step .step-detail {
+            opacity: 0.8;
+            margin-top: 4px;
         }
 
         .hint {
@@ -162,11 +207,19 @@
             transition: opacity 0.2s;
         }
 
-        .github-link:hover {
+        .tests-link {
+            position: fixed;
+            top: 20px;
+            right: 60px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .github-link:hover, .tests-link:hover {
             opacity: 1;
         }
 
-        .github-link svg {
+        .github-link svg, .tests-link svg {
             width: 24px;
             height: 24px;
             fill: var(--text-color);
@@ -187,6 +240,52 @@
             overflow-x: auto;
         }
 
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 12px;
+        }
+
+        .tab {
+            padding: 8px 16px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            border-bottom-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .success-marker {
+            color: var(--success-color);
+            font-weight: bold;
+        }
+
+        .error-marker {
+            color: var(--error-color);
+            font-weight: bold;
+        }
+
+        .debug-marker {
+            color: var(--debug-color);
+            font-weight: bold;
+        }
+
+        .method-name {
+            color: var(--accent-color);
+            font-style: italic;
+        }
+
         @media (max-width: 1024px) {
             body {
                 padding: 12px;
@@ -196,7 +295,7 @@
                 padding: 16px;
             }
 
-            .input-group, .result-section, .code-section {
+            .input-group, .result-section, .code-section, .debug-section {
                 padding: 12px;
             }
         }
@@ -217,7 +316,7 @@
                 padding: 12px;
             }
 
-            .input-group, .result-section, .code-section {
+            .input-group, .result-section, .code-section, .debug-section {
                 padding: 10px;
             }
 
@@ -250,6 +349,21 @@
                 top: 10px;
                 right: 10px;
             }
+
+            .tests-link {
+                position: absolute;
+                top: 10px;
+                right: 45px;
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+            
+            .tab {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
         }
 
         @media (max-height: 600px) {
@@ -267,6 +381,11 @@
     </style>
 </head>
 <body>
+    <a href="/tests/browser-format-test.html" class="tests-link" aria-label="View Tests">
+        <svg viewBox="0 0 16 16">
+            <path d="M8.93 6.588l-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 11-2 0 1 1 0 012 0z"/>
+        </svg>
+    </a>
     <a href="https://github.com/dumbwareio/DumbDateParser" class="github-link" aria-label="View on GitHub">
         <svg viewBox="0 0 16 16">
             <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
@@ -291,7 +410,7 @@
             <label for="dateInput">Enter a date:</label>
             <input type="text" id="dateInput" placeholder="Try: tomorrow, next friday, 15th march...">
             <div class="hint">
-                Try phrases like: "tod", "tom", "thurs", "tues", "next fri", "in 3 days", "15 march", "3rd thurs in november", "mon"
+                Try phrases like: "tod", "tom", "thurs", "tues", "next fri", "in 3 days", "15 march", "3rd thurs in november", "mon", "20260623", "23 june 2026", "june 23 2026", "june 23 at 5pm"
             </div>
         </div>
 
@@ -300,19 +419,300 @@
             <div id="parsedResult">Enter a date above to see the result</div>
         </div>
 
-        <div class="code-section">
-            <h3>Code Used:</h3>
-            <pre id="codeUsed">// Enter a date to see the code that parsed it</pre>
+        <div class="debug-section">
+            <h3>Parsing Debug Info:</h3>
+            <div class="tabs">
+                <div class="tab active" data-tab="steps">Parsing Steps</div>
+                <div class="tab" data-tab="details">Parser Details</div>
+                <div class="tab" data-tab="code">Code Used</div>
+            </div>
+            
+            <div class="tab-content active" data-tab="steps">
+                <div id="parsingSteps">Enter a date above to see the parsing steps</div>
+            </div>
+            
+            <div class="tab-content" data-tab="details">
+                <div id="parserDetails">Enter a date above to see parser details</div>
+            </div>
+            
+            <div class="tab-content" data-tab="code">
+                <pre id="codeUsed">// Enter a date to see the code that parsed it</pre>
+            </div>
         </div>
     </div>
 
     <script type="module">
         import DumbDateParser from './src/index.js';
         
-        const parser = new DumbDateParser();
+        // Create a custom parser that tracks parsing steps
+        class DebugDumbDateParser extends DumbDateParser {
+            constructor(options = {}) {
+                super(options);
+                this.debug = {
+                    input: '',
+                    normalizedInput: '',
+                    steps: [],
+                    successfulMethod: null,
+                    timeInfo: null,
+                    timezoneInfo: null,
+                    result: null
+                };
+            }
+            
+            resetDebug(input) {
+                this.debug = {
+                    input,
+                    normalizedInput: '',
+                    steps: [],
+                    successfulMethod: null,
+                    timeInfo: null,
+                    timezoneInfo: null,
+                    result: null
+                };
+            }
+            
+            addDebugStep(methodName, details, success = false) {
+                this.debug.steps.push({
+                    methodName,
+                    details,
+                    success
+                });
+                
+                if (success) {
+                    this.debug.successfulMethod = methodName;
+                }
+            }
+            
+            // Override the main parsing methods to add debug info
+            parse(text) {
+                this.resetDebug(text);
+                
+                if (!text) {
+                    this.addDebugStep('parse', 'Empty input', false);
+                    return null;
+                }
+                
+                // Normalize text
+                const normalizedText = text.toLowerCase().trim();
+                this.debug.normalizedInput = normalizedText;
+                this.addDebugStep('normalize', `Normalized input: "${normalizedText}"`, true);
+                
+                // Reset reference date for each parse
+                this._referenceDate = new Date();
+                this.addDebugStep('setReference', `Reference date set to: ${this._referenceDate.toISOString()}`, true);
+                
+                // Extract timezone if present
+                let timezone = null;
+                let extractedTimezone = false;
+                Object.keys(TIMEZONE_OFFSETS).forEach(tz => {
+                    if (normalizedText.includes(` ${tz}`)) {
+                        timezone = tz;
+                        extractedTimezone = true;
+                    }
+                });
+                
+                let textWithoutTimezone = normalizedText;
+                if (extractedTimezone) {
+                    textWithoutTimezone = normalizedText.replace(` ${timezone}`, '');
+                    this.addDebugStep('extractTimezone', `Extracted timezone: ${timezone}`, true);
+                } else {
+                    this.addDebugStep('extractTimezone', 'No timezone found in input', false);
+                }
+
+                // Extract time-of-day indicators before splitting
+                let timeOfDay = null;
+                const timeMatch = textWithoutTimezone.match(/(morning|afternoon|evening|night)/);
+                if (timeMatch) {
+                    timeOfDay = timeMatch[1];
+                    textWithoutTimezone = textWithoutTimezone.replace(` ${timeOfDay}`, '').replace(`${timeOfDay}`, '').trim();
+                    this.addDebugStep('extractTimeOfDay', `Extracted time of day: ${timeOfDay}`, true);
+                } else {
+                    this.addDebugStep('extractTimeOfDay', 'No time of day found in input', false);
+                }
+                
+                // Check for 4-digit year pattern
+                const hasYear = /\b\d{4}\b/.test(textWithoutTimezone);
+                if (hasYear) {
+                    this.addDebugStep('checkYear', 'Found 4-digit year in input', true);
+                } else {
+                    this.addDebugStep('checkYear', 'No 4-digit year found in input', false);
+                }
+                
+                // Split into date and time parts if "at" is present
+                const parts = textWithoutTimezone.split(' at ');
+                let date = null;
+                
+                if (parts.length > 1) {
+                    this.addDebugStep('splitAtTime', `Split input at 'at': date part="${parts[0]}", time part="${parts[1]}"`, true);
+                } else {
+                    this.addDebugStep('splitAtTime', 'No "at" found in input', false);
+                }
+                
+                // Parse the date part
+                let datePart = parts[0];
+                
+                // If the text contains a year, try date formats with years first
+                if (hasYear) {
+                    this.addDebugStep('strategy', 'Trying year-based formats first due to 4-digit year detection', true);
+                    
+                    date = this._parseFormattedDate(datePart);
+                    if (date) {
+                        this.addDebugStep('_parseFormattedDate', `Successfully parsed formatted date: ${datePart}`, true);
+                    } else {
+                        this.addDebugStep('_parseFormattedDate', `Failed to parse as formatted date: ${datePart}`, false);
+                        
+                        date = this._parseDirectDate(datePart);
+                        if (date) {
+                            this.addDebugStep('_parseDirectDate', `Successfully parsed direct date: ${datePart}`, true);
+                        } else {
+                            this.addDebugStep('_parseDirectDate', `Failed to parse as direct date: ${datePart}`, false);
+                        }
+                    }
+                }
+                
+                // If no date was found or no year was present, try the other formats
+                if (!date) {
+                    this.addDebugStep('strategy', 'Trying standard parsing methods', true);
+                    
+                    date = this._parseRelative(datePart);
+                    if (date) {
+                        this.addDebugStep('_parseRelative', `Successfully parsed relative date: ${datePart}`, true);
+                    } else {
+                        this.addDebugStep('_parseRelative', `Failed to parse as relative date: ${datePart}`, false);
+                        
+                        date = this._parseSingleDay(datePart);
+                        if (date) {
+                            this.addDebugStep('_parseSingleDay', `Successfully parsed single day: ${datePart}`, true);
+                        } else {
+                            this.addDebugStep('_parseSingleDay', `Failed to parse as single day: ${datePart}`, false);
+                            
+                            date = this._parseNextDay(datePart);
+                            if (date) {
+                                this.addDebugStep('_parseNextDay', `Successfully parsed next day: ${datePart}`, true);
+                            } else {
+                                this.addDebugStep('_parseNextDay', `Failed to parse as next day: ${datePart}`, false);
+                                
+                                date = this._parseOrdinalDay(datePart);
+                                if (date) {
+                                    this.addDebugStep('_parseOrdinalDay', `Successfully parsed ordinal day: ${datePart}`, true);
+                                } else {
+                                    this.addDebugStep('_parseOrdinalDay', `Failed to parse as ordinal day: ${datePart}`, false);
+                                    
+                                    date = this._parseSimpleDate(datePart);
+                                    if (date) {
+                                        this.addDebugStep('_parseSimpleDate', `Successfully parsed simple date: ${datePart}`, true);
+                                    } else {
+                                        this.addDebugStep('_parseSimpleDate', `Failed to parse as simple date: ${datePart}`, false);
+                                        
+                                        // As a last resort, try the date formats with years and direct parsing
+                                        if (!hasYear) {
+                                            this.addDebugStep('strategy', 'Trying year-based formats as fallback', true);
+                                            
+                                            date = this._parseFormattedDate(datePart);
+                                            if (date) {
+                                                this.addDebugStep('_parseFormattedDate', `Successfully parsed formatted date: ${datePart}`, true);
+                                            } else {
+                                                this.addDebugStep('_parseFormattedDate', `Failed to parse as formatted date: ${datePart}`, false);
+                                                
+                                                date = this._parseDirectDate(datePart);
+                                                if (date) {
+                                                    this.addDebugStep('_parseDirectDate', `Successfully parsed direct date: ${datePart}`, true);
+                                                } else {
+                                                    this.addDebugStep('_parseDirectDate', `Failed to parse as direct date: ${datePart}`, false);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                if (!date) {
+                    this.addDebugStep('result', 'Failed to parse date with any method', false);
+                    return null;
+                }
+                
+                this.addDebugStep('result', `Successfully parsed date: ${date.toISOString()}`, true);
+                
+                // Parse the time part if it exists
+                if (parts.length > 1) {
+                    this._applyTime(date, parts[1]);
+                    this.addDebugStep('applyTime', `Applied time from "at" clause: "${parts[1]}"`, true);
+                    this.debug.timeInfo = {
+                        source: 'explicit',
+                        value: parts[1],
+                        result: `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`
+                    };
+                } else if (timeOfDay) {
+                    // Apply extracted time-of-day
+                    const hour = this.timeDefaults[timeOfDay];
+                    date.setHours(hour, 0, 0, 0);
+                    this.addDebugStep('applyTimeOfDay', `Applied time of day: ${timeOfDay} (${hour}:00)`, true);
+                    this.debug.timeInfo = {
+                        source: 'timeOfDay',
+                        value: timeOfDay,
+                        result: `${hour}:00`
+                    };
+                } else {
+                    this.debug.timeInfo = {
+                        source: 'default',
+                        value: 'none',
+                        result: `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`
+                    };
+                }
+
+                // Apply timezone offset if specified
+                if (timezone || this.defaultTimezone) {
+                    const tz = timezone || this.defaultTimezone;
+                    const tzOffset = TIMEZONE_OFFSETS[tz];
+                    if (tzOffset !== undefined) {
+                        // Get the difference between local timezone and input timezone
+                        const localOffset = -date.getTimezoneOffset() / 60; // Convert to hours and invert sign
+                        const hoursDiff = localOffset - tzOffset;
+                        
+                        // Adjust the time by the difference in hours
+                        date.setHours(date.getHours() + hoursDiff);
+                        
+                        this.addDebugStep('applyTimezone', `Applied timezone offset: ${tz} (${tzOffset}), adjusted by ${hoursDiff} hours`, true);
+                        this.debug.timezoneInfo = {
+                            source: timezone ? 'explicit' : 'default',
+                            value: tz,
+                            offset: tzOffset,
+                            adjustment: hoursDiff
+                        };
+                    }
+                }
+                
+                this.debug.result = date;
+                return date;
+            }
+        }
+        
+        // Create timezone offset map (simplified version for debugging)
+        const TIMEZONE_OFFSETS = {
+            'est': -5, 'cst': -6, 'mst': -7, 'pst': -8, 
+            'edt': -4, 'cdt': -5, 'mdt': -6, 'pdt': -7
+        };
+
+        const parser = new DebugDumbDateParser();
         const dateInput = document.getElementById('dateInput');
         const parsedResult = document.getElementById('parsedResult');
         const codeUsed = document.getElementById('codeUsed');
+        const parsingSteps = document.getElementById('parsingSteps');
+        const parserDetails = document.getElementById('parserDetails');
+
+        // Set up tab navigation
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                tab.classList.add('active');
+                document.querySelector(`.tab-content[data-tab="${tab.dataset.tab}"]`).classList.add('active');
+            });
+        });
 
         function formatDate(date) {
             if (!date) return 'Could not parse date';
@@ -326,6 +726,66 @@
                 timeZoneName: 'short'
             });
         }
+        
+        function renderParsingSteps(debug) {
+            if (!debug || !debug.steps || debug.steps.length === 0) {
+                return '<div>No parsing steps available</div>';
+            }
+            
+            let html = '';
+            
+            debug.steps.forEach(step => {
+                const stepClass = step.success ? 'success' : 'fail';
+                const icon = step.success ? '✅' : '❌';
+                
+                html += `<div class="parsing-step ${stepClass}">
+                    <div class="step-name">${icon} <span class="method-name">${step.methodName}</span></div>
+                    <div class="step-detail">${step.details}</div>
+                </div>`;
+            });
+            
+            return html;
+        }
+        
+        function renderParserDetails(debug) {
+            if (!debug) return '<div>No parser details available</div>';
+            
+            let html = '<pre>';
+            
+            html += `<span class="debug-marker">Input:</span> "${debug.input}"\n`;
+            html += `<span class="debug-marker">Normalized:</span> "${debug.normalizedInput}"\n\n`;
+            
+            if (debug.successfulMethod) {
+                html += `<span class="success-marker">Successful Method:</span> ${debug.successfulMethod}\n\n`;
+            } else {
+                html += `<span class="error-marker">No Successful Method</span>\n\n`;
+            }
+            
+            if (debug.timeInfo) {
+                html += `<span class="debug-marker">Time Information:</span>\n`;
+                html += `  Source: ${debug.timeInfo.source}\n`;
+                html += `  Value: ${debug.timeInfo.value}\n`;
+                html += `  Result: ${debug.timeInfo.result}\n\n`;
+            }
+            
+            if (debug.timezoneInfo) {
+                html += `<span class="debug-marker">Timezone Information:</span>\n`;
+                html += `  Source: ${debug.timezoneInfo.source}\n`;
+                html += `  Value: ${debug.timezoneInfo.value}\n`;
+                html += `  Offset: ${debug.timezoneInfo.offset}\n`;
+                html += `  Adjustment: ${debug.timezoneInfo.adjustment} hours\n\n`;
+            }
+            
+            if (debug.result) {
+                html += `<span class="success-marker">Result:</span> ${debug.result.toISOString()}\n`;
+            } else {
+                html += `<span class="error-marker">Result:</span> Failed to parse\n`;
+            }
+            
+            html += '</pre>';
+            
+            return html;
+        }
 
         dateInput.addEventListener('input', () => {
             const input = dateInput.value.trim();
@@ -333,6 +793,8 @@
             if (!input) {
                 parsedResult.textContent = 'Enter a date above to see the result';
                 codeUsed.textContent = '// Enter a date to see the code that parsed it';
+                parsingSteps.innerHTML = 'Enter a date above to see the parsing steps';
+                parserDetails.innerHTML = 'Enter a date above to see parser details';
                 return;
             }
 
@@ -345,6 +807,12 @@
                     ? formatDate(result) 
                     : 'Could not parse date';
                 
+                // Show parsing steps
+                parsingSteps.innerHTML = renderParsingSteps(parser.debug);
+                
+                // Show parser details
+                parserDetails.innerHTML = renderParserDetails(parser.debug);
+                
                 // Show the code used to parse
                 codeUsed.textContent = `// Parsing "${input}"
 const parser = new DumbDateParser();
@@ -352,17 +820,17 @@ const result = parser.parse('${input}');
 
 // Result: ${result ? formatDate(result) : 'null'}
 
-// Parsing steps:
-// 1. Normalize input: lowercase and trim
-// 2. Try parsing methods in order:
-//    - Relative dates (today, tomorrow)
-//    - Single day names
-//    - Next day references
-//    - Ordinal day parsing
-//    - Simple date formats`;
+${parser.debug.successfulMethod ? `// Successfully parsed using: ${parser.debug.successfulMethod}` : '// Failed to parse with any method'}
+${parser.debug.timeInfo ? `// Time applied: ${parser.debug.timeInfo.source} (${parser.debug.timeInfo.result})` : ''}
+${parser.debug.timezoneInfo ? `// Timezone applied: ${parser.debug.timezoneInfo.value} (offset: ${parser.debug.timezoneInfo.offset})` : ''}`;
             } catch (error) {
                 parsedResult.textContent = 'Error parsing date';
                 codeUsed.textContent = `// Error: ${error.message}`;
+                parsingSteps.innerHTML = `<div class="parsing-step fail">
+                    <div class="step-name">❌ Error</div>
+                    <div class="step-detail">${error.message}</div>
+                </div>`;
+                parserDetails.innerHTML = `<pre><span class="error-marker">Error:</span> ${error.message}</pre>`;
             }
         });
     </script>

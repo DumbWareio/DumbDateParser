@@ -3,6 +3,7 @@ services:
     build: .
     container_name: dumbdateparser
     environment:
-      - TZ=America/Los_Angeles
+      - TZ=America/Los_Angeles # Set timezone to what
+      - PORT=3001
     ports:
-      - "3001:3000" 
+      - "3001:3001"

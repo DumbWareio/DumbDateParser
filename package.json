@@ -1,6 +1,6 @@
 {
-  "name": "dumbdateparser",
-  "version": "1.2.2",
+  "name": "@dumbwareio/dumbdateparser",
+  "version": "1.3.0",
   "description": "A stupidly simple date parser - part of the DumbWare suite",
   "type": "module",
   "main": "src/index.js",

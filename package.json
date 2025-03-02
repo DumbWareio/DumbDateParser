@@ -12,10 +12,10 @@
   "scripts": {
     "start": "node server.js",
     "test": "node test/test.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "release": "semantic-release"
   },
   "keywords": ["date", "parser", "dumbware", "simple"],
   "author": "DumbWare",
-  "license": "MIT",
-  "release": "semantic-release"
+  "license": "MIT"
 }

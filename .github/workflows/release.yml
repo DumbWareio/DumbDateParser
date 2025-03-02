@@ -5,6 +5,12 @@ on:
     branches:
       - main
 
+# Add permissions to allow semantic-release to push to the repository
+permissions:
+  contents: write  # Required for pushing git tags and releases
+  issues: write    # Required for creating issues
+  packages: write  # Required for publishing to GitHub Packages if needed
+
 jobs:
   release:
     runs-on: ubuntu-latest

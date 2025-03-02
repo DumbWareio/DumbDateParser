@@ -16,5 +16,6 @@
   },
   "keywords": ["date", "parser", "dumbware", "simple"],
   "author": "DumbWare",
-  "license": "MIT"
+  "license": "MIT",
+  "release": "semantic-release"
 }

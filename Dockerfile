@@ -9,7 +9,10 @@ RUN npm ci --only=production
 # Copy application files
 COPY . .
 
-EXPOSE 3000
+# Fix permissions for mounted volumes
+RUN chmod -R 755 /app && chown -R node:node /app
+
+EXPOSE 3001
 
 # Use non-root user for better security
 USER node
